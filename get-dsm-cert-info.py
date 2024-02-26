@@ -1,21 +1,30 @@
 #!/usr/bin/env python
+
 ##  Output certificate information on DSM (7.x) from related INFO file.
 ##  Copyright (C) 2024  Matthias "Maddes" Bücher
-##  
+##
 ##  This program is free software; you can redistribute it and/or modify
 ##  it under the terms of the GNU General Public License as published by
 ##  the Free Software Foundation; either version 2 of the License, or
 ##  (at your option) any later version.
-##  
+##
 ##  This program is distributed in the hope that it will be useful,
 ##  but WITHOUT ANY WARRANTY; without even the implied warranty of
 ##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ##  GNU General Public License for more details.
-##  
+##
 ##  You should have received a copy of the GNU General Public License along
 ##  with this program; if not, write to the Free Software Foundation, Inc.,
 ##  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 ##  Or visit https://www.gnu.org/licenses/old-licenses/gpl-2.0.html.en
+
+## Information:
+## - Developed/Tested for Python3 on DS1821+ with DSM 7.2.1
+##   Recommended to place into /usr/local/sbin (needs root permissions to access info file)
+##   Use parameter '-h' to get help on script
+## - Reason no Let's Encrypt dns-01 challenge possible in my current situation, so have to distribute via copying to services
+## - Idea of filtering on certificate description was adopted from rubinho's script
+##   see https://www.synology-forum.de/threads/frage-ssl-zertifikat-webserver-per-shell-einfuegen-und-verteilen.91243/#post-785587
 
 import sys
 import json
@@ -63,9 +72,10 @@ def createArgParser():
 
     ## Build Arg Parser
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("-t", "--type", metavar="INFO_TYPE", required=True, choices=info_type_choices, help=info_type_help)
-    parser.add_argument("-i", "--id", metavar="ID", required=False, help="Only output data for this ID if it exists.\nNo more ID prefixes printed, useful for shell scripts.")
-    parser.add_argument("-s", "--srv", metavar="SRV", required=False, help="Only output data for this service if it exists.\nNo more service prefixes printed, useful for shell scripts.")
+    parser.add_argument("-t", "--type", metavar="INFO_TYPE", choices=info_type_choices, help=info_type_help, default="id-desc")
+    parser.add_argument("-i", "--id", metavar="ID", help="Only output data for this ID if it exists.\nNo more ID prefixes printed, useful for shell scripts.")
+    parser.add_argument("-d", "--desc", metavar="DESC", help="Only output data for certificate with this description if it exists.\nNo more ID prefixes printed, useful for shell scripts.")
+    parser.add_argument("-s", "--srv", metavar="SRV", help="Only output data for this service if it exists.\nNo more service prefixes printed, useful for shell scripts.")
     #parser.add_argument("-v", "--verbose", action="store_true")
 
     return parser
@@ -78,6 +88,8 @@ def printPrefix(do_print, prefix):
 
 if __name__ == "__main__":
     ## Check parameters from command line
+    ## Notes:
+    ## - check Arguments.desc for "is not None", as it must allow empty string for filtering on initial certificate
     Parser = createArgParser()
     Arguments = Parser.parse_args()
     if Arguments.id:
@@ -87,7 +99,8 @@ if __name__ == "__main__":
     PrintIdPrefix = True
     PrintSrvPrefix = True
     #
-    if Arguments.id:
+    if Arguments.id \
+    or Arguments.desc is not None:
         PrintIdPrefix = False
     if Arguments.srv:
         PrintSrvPrefix = False
@@ -105,6 +118,10 @@ if __name__ == "__main__":
     for cert_id, cert_def in cert_info.items():
         if Arguments.id \
         and cert_id != Arguments.id:
+            continue
+
+        if Arguments.desc is not None \
+        and cert_def["desc"] != Arguments.desc:
             continue
 
         if Arguments.type == "id":
