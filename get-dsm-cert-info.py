@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8; tab-width: 4; indent-tabs-mode: nil; py-indent-offset: 4 -*-
 
 ##  Output certificate information on DSM (7.x) from related INFO file.
 ##  Copyright (C) 2024  Matthias "Maddes" Bücher
@@ -25,6 +26,12 @@
 ## - Reason no Let's Encrypt dns-01 challenge possible in my current situation, so have to distribute via copying to services
 ## - Idea of filtering on certificate description was adopted from rubinho's script
 ##   see https://www.synology-forum.de/threads/frage-ssl-zertifikat-webserver-per-shell-einfuegen-und-verteilen.91243/#post-785587
+
+### Python 2 future-compatible workarounds: (see: http://python-future.org/compatible_idioms.html)
+## a) prevent interpreting print(a,b) as a tuple
+from __future__ import print_function
+## b) interpret all literals as unicode
+from __future__ import unicode_literals
 
 import sys
 import json
